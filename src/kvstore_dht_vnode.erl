@@ -6,7 +6,7 @@
 -module(kvstore_dht_vnode).
 -behavior(riak_core_vnode).
 -include("kvstore.hrl").
--include_lib("riak_core/include/riak_core_vnode.hrl").
+-include_lib("../deps/riak_core/include/riak_core_vnode.hrl").
 
 %% ====================================================================
 %% API
@@ -75,7 +75,7 @@ incrby(PrefList, ReqId, KeyName, Val) ->
 init([Partition]) ->
     {ok, #state { partition=Partition, keys=dict:new() }}.
 
-handle_command({get, ReqId, KeyName}, _Sender, #state{partition=Partition, keys=Keys}=State) ->
+handle_command({get, ReqId, KeyName}, _Sender, #state{partition=_, keys=Keys}=State) ->
     Reply =
         case dict:find(KeyName, Keys) of
             error ->
@@ -83,7 +83,7 @@ handle_command({get, ReqId, KeyName}, _Sender, #state{partition=Partition, keys=
             {ok, Found} ->
                 Found
         end,
-	?PRINT({dht_reply, Partition, KeyName, Reply}),
+	%?PRINT({dht_reply, Partition, KeyName, Reply}),
     {reply, {ok, ReqId, Reply}, State};
 
 handle_command({put, ReqId, KeyName, Val}, _Sender, #state{keys=KeysInit}=State) ->
