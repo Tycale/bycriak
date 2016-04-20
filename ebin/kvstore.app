@@ -1,0 +1,12 @@
+{application,kvstore,
+             [{description,[]},
+              {vsn,"1"},
+              {registered,[]},
+              {applications,[kernel,stdlib,riak_core]},
+              {mod,{kvstore_app,[]}},
+              {env,[]},
+              {modules,[kvstore,kvstore_app,kvstore_console,kvstore_dht_vnode,
+                        kvstore_get_fsm,kvstore_get_fsm_sup,
+                        kvstore_modify_fsm,kvstore_modify_fsm_sup,
+                        kvstore_node_event_handler,kvstore_ring_event_handler,
+                        kvstore_sup,kvstore_vnode]}]}.
