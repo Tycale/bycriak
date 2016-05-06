@@ -4,7 +4,7 @@
 
 -export([
          ping/0,
-		 get_partitions/0,
+         get_partitions/0,
          get/1,
          put/2,
          incr/1,
@@ -27,6 +27,9 @@ get_partitions() ->
 	?PRINT(riak_core_nodeid:get()),
 	{ok, CHBin} = riak_core_ring_manager:get_chash_bin(),
     chashbin:to_list(CHBin).
+
+start_race() ->
+    .
 
 %% @doc Get a key's value.
 get(KeyName) ->
