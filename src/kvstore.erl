@@ -5,6 +5,7 @@
 -export([
          ping/0,
          get_partitions/0,
+         start_race/0,
          get/1,
          put/2,
          incr/1,
@@ -21,6 +22,7 @@ ping() ->
     DocIdx = riak_core_util:chash_key({<<"ping">>, term_to_binary(now())}),
     PrefList = riak_core_apl:get_primary_apl(DocIdx, 1, kvstore),
     [{IndexNode, _Type}] = PrefList,
+    ?PRINT({"indexnode", IndexNode}),
     riak_core_vnode_master:sync_spawn_command(IndexNode, ping, kvstore_vnode_master).
 
 get_partitions() ->
@@ -29,7 +31,7 @@ get_partitions() ->
     chashbin:to_list(CHBin).
 
 start_race() ->
-    .
+    ?PRINT(io:format("Coucou ~p ~n", [5])).
 
 %% @doc Get a key's value.
 get(KeyName) ->
