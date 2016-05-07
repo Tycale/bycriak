@@ -5,7 +5,7 @@
 -export([
          ping/0,
          get_partitions/0,
-         start_race/0,
+         start_race/2,
          get/1,
          put/2,
          incr/1,
@@ -15,7 +15,49 @@
 -define(BUCKET, "default").
 -define(TIMEOUT, 5000).
 
+-define(ROUND_LENGTH, 10).
+-define(DISTANCE, 100).
+-define(ENERGY, 112).
+
+-record(state_race, {id, 
+                                   position, 
+                                   speed, 
+                                   energy}).
+
 %% Public API
+
+%% Start the race
+start_race(N, Tot_bikers) ->
+    io:format("Welcome to the race biker #~p, you'll compete with ~p other bikers! ~n", [N, Tot_bikers]),
+    My_state = create_biker_state(N),
+    States = create_biker_list(Tot_bikers),
+    ?PRINT(States),
+    ?PRINT(My_state),
+    {ok, Choice} = ask_choice(),
+    ?PRINT(Choice),
+    {ok}.
+
+create_biker_state(N) ->
+    #state_race{id=N, position=0, speed=0, energy=?ENERGY}.
+
+create_biker_list(N) ->
+    create_biker_list(N, []).
+
+create_biker_list(N, L) ->
+    case N of 
+        0 -> L;
+        _ -> create_biker_list(N-1, [create_biker_state(N) | L])
+    end.
+
+ask_choice() ->
+    io:fwrite("Choose your strategy for this round: ~n"),
+    io:fwrite("1. Change your speed ~n"),
+    io:fwrite("2. Go behind a player ~n"),
+    io:fwrite("3. Use boost ~n"),
+    Choice = io:fread('choice> ', "~d"),
+    {ok, Choice}.
+
+
 
 %% @doc Pings a random vnode to make sure communication is functional
 ping() ->
@@ -29,9 +71,6 @@ get_partitions() ->
 	?PRINT(riak_core_nodeid:get()),
 	{ok, CHBin} = riak_core_ring_manager:get_chash_bin(),
     chashbin:to_list(CHBin).
-
-start_race() ->
-    ?PRINT(io:format("Coucou ~p ~n", [5])).
 
 %% @doc Get a key's value.
 get(KeyName) ->
