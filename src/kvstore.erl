@@ -19,26 +19,31 @@
 -define(DISTANCE, 100).
 -define(ENERGY, 112).
 
--record(state_race, {id, 
+-record(state_biker, {id, 
                                    position, 
                                    speed, 
-                                   energy}).
+                                   energy,
+                                   behind,
+                                   boost}).
 
 %% Public API
 
 %% Start the race
 start_race(N, Tot_bikers) ->
     io:format("Welcome to the race biker #~p, you'll compete with ~p other bikers! ~n", [N, Tot_bikers]),
-    My_state = create_biker_state(N),
     States = create_biker_list(Tot_bikers),
-    ?PRINT(States),
-    ?PRINT(My_state),
-    {ok, Choice} = ask_choice(),
-    ?PRINT(Choice),
-    {ok}.
+    display_positions(States),
+    C = ask_choice(last_choice),
+    ?PRINT(C),
+    Decisions = [{speed, 10}, {speed, 9}, {speed, 8}],
+    S1 = update_states(States, Decisions, Tot_bikers),
+    S2 = update_states(S1, Decisions, Tot_bikers),
+    ?PRINT(S1),
+    ?PRINT(S2),
+    {ok} .
 
 create_biker_state(N) ->
-    #state_race{id=N, position=0, speed=0, energy=?ENERGY}.
+    #state_biker{id=N, position=0, speed=0, energy=?ENERGY}.
 
 create_biker_list(N) ->
     create_biker_list(N, []).
@@ -49,15 +54,84 @@ create_biker_list(N, L) ->
         _ -> create_biker_list(N-1, [create_biker_state(N) | L])
     end.
 
-ask_choice() ->
+wait_input(Timeout) ->
+    Parent = self(),
+    Get_cmd = fun() -> 
+        Parent ! io:get_line("choice > ") 
+    end,
+    Pid = spawn(Get_cmd),
+    receive
+        Data -> Data
+    after Timeout ->
+        exit(Pid, kill),
+        timeout
+    end.
+
+ask_choice(Last_choice) ->
     io:fwrite("Choose your strategy for this round: ~n"),
-    io:fwrite("1. Change your speed ~n"),
-    io:fwrite("2. Go behind a player ~n"),
-    io:fwrite("3. Use boost ~n"),
-    Choice = io:fread('choice> ', "~d"),
-    {ok, Choice}.
+    io:fwrite("* Change your speed, type : 1 NEW_SPEED~n"),
+    io:fwrite("* Go behind a player, type : 2 ID_PLAYER ~n"),
+    io:fwrite("* Use boost, type : 3 ~n"),
+    case wait_input(10000) of
+        timeout -> Last_choice;
+        Cmd -> 
+            T = lists:map(fun(X) -> {Int, _} = string:to_integer(X), Int end, string:tokens(Cmd, " ")),
+            case T of
+                [1, X] -> {speed, X};
+                [2, X] -> {behind, X};
+                [3] -> {boost};
+                _ -> Last_choice
+            end
+    end.
 
+update_states(Old_states, Decisions, Tot_bikers) ->
+    update_states(Old_states, Decisions, Tot_bikers, []).
 
+update_states(Old_states, Decisions, N, L) ->
+    case N of
+        0 -> L;
+        _ ->  NS = update_state(lists:nth(N,Old_states), Old_states, N, lists:nth(N, Decisions)),
+                update_states(Old_states, Decisions, N-1, [ NS | L ])
+    end.
+
+update_state(State, Old_states, Id, Decision) ->
+    case Decision of 
+        {speed, X} -> State#state_biker{speed=X, position=calc_position(Old_states, Id), energy=calc_energy(Old_states, Id)};
+        _ -> notImplementedYet
+    end.
+
+calc_position(States, Id) ->
+    State = get_state(States, Id),
+    case State of
+        #state_biker{behind=undefined} -> get_position(States, Id) + get_speed(States, Id);
+        #state_biker{behind=X} -> get_position(States, X) % TODO : not good
+    end.
+
+calc_energy(States, Id) ->
+    State = get_state(States, Id),
+    case State of
+        #state_biker{boost=true} -> 0;
+        #state_biker{energy=E, behind=undefined} -> E - 0.12 * get_speed(States, Id) * get_speed(States, Id);
+        #state_biker{energy=E, behind=B} -> E - 0.06 * get_speed(States, B) * get_speed(States, B)
+    end.
+
+get_state(States, Id) ->
+    lists:nth(Id, States).
+
+get_position(States, Id) ->
+    P = get_state(States, Id),
+    P#state_biker.position.
+
+get_speed(States, Id) ->
+    P = get_state(States, Id),
+    P#state_biker.speed.
+
+display_positions(States) -> % TODO : Display position in tuple
+    Comp_fct = fun(X, Y) -> X#state_biker.position > Y#state_biker.position end,
+    Format_fct = fun(A, AccIn) -> io:format("#~p (position: ~p, speed: ~p, energy: ~p) ~n", 
+        [A#state_biker.id, A#state_biker.position, A#state_biker.speed, A#state_biker.energy]), AccIn end,
+    io:fwrite(lists:foldr(Format_fct, "", lists:sort(Comp_fct, States))).
+    
 
 %% @doc Pings a random vnode to make sure communication is functional
 ping() ->
