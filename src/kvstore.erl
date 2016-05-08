@@ -32,15 +32,26 @@
 start_race(N, Tot_bikers) ->
     io:format("Welcome to the race biker #~p, you'll compete with ~p other bikers! ~n", [N, Tot_bikers]),
     States = create_biker_list(Tot_bikers),
+    My_choices = [{speed, 0}],
+    do_race(N, Tot_bikers, States, My_choices, 0),
+    {ok} .
+
+do_race(N, Tot_bikers, States, My_choices, Round) ->
+    
     display_positions(States),
-    C = ask_choice(last_choice),
-    ?PRINT(C),
+    Choice = guarded_choice(lists:nth(length(My_choices), My_choices), States, N),
+    ?PRINT(Choice),
     Decisions = [{speed, 10}, {speed, 9}, {speed, 8}],
     S1 = update_states(States, Decisions, Tot_bikers),
     S2 = update_states(S1, Decisions, Tot_bikers),
     ?PRINT(S1),
     ?PRINT(S2),
-    {ok} .
+
+    case have_win(States) of
+        false -> do_race(N, Tot_bikers, States, My_choices ++ [Choice], Round+1);
+        X -> io:format("We got a winner ! ~p have completed the race !", [X])
+    end
+    .
 
 create_biker_state(N) ->
     #state_biker{id=N, position=0, speed=0, energy=?ENERGY}.
@@ -73,15 +84,27 @@ ask_choice(Last_choice) ->
     io:fwrite("* Go behind a player, type : 2 ID_PLAYER ~n"),
     io:fwrite("* Use boost, type : 3 ~n"),
     case wait_input(10000) of
-        timeout -> Last_choice;
+        timeout -> io:format("~nA time out occured, your last choice will be used ~n", []), Last_choice;
         Cmd -> 
             T = lists:map(fun(X) -> {Int, _} = string:to_integer(X), Int end, string:tokens(Cmd, " ")),
             case T of
                 [1, X] -> {speed, X};
                 [2, X] -> {behind, X};
                 [3] -> {boost};
-                _ -> Last_choice
+                _ -> io:format("~nInput error, your last choice will be used ~n", []), Last_choice
             end
+    end.
+
+guarded_choice(Last_choice, States, N) ->
+    case ask_choice(Last_choice) of 
+        {speed, X} -> 
+            E = get_energy(States, N),
+            if X > E -> 
+                io:format("You don't have any energy to perform this action, setting your speed to 0."), 
+                {speed, 0}; 
+                true -> {speed, X}
+            end;
+        Choice -> Choice
     end.
 
 update_states(Old_states, Decisions, Tot_bikers) ->
@@ -126,12 +149,25 @@ get_speed(States, Id) ->
     P = get_state(States, Id),
     P#state_biker.speed.
 
+get_energy(States, Id) ->
+    P = get_state(States, Id),
+    P#state_biker.energy.
+
 display_positions(States) -> % TODO : Display position in tuple
     Comp_fct = fun(X, Y) -> X#state_biker.position > Y#state_biker.position end,
     Format_fct = fun(A, AccIn) -> io:format("#~p (position: ~p, speed: ~p, energy: ~p) ~n", 
         [A#state_biker.id, A#state_biker.position, A#state_biker.speed, A#state_biker.energy]), AccIn end,
     io:fwrite(lists:foldr(Format_fct, "", lists:sort(Comp_fct, States))).
-    
+
+have_win(States) ->
+    Comp_fct = fun(X, Y) -> X#state_biker.position > Y#state_biker.position end,
+    Sorted_states = lists:sort(Comp_fct, States),
+    [H|_] = Sorted_states,
+    if H#state_biker.position >= ?DISTANCE -> H#state_biker.id;
+        true -> false
+    end
+    .
+
 
 %% @doc Pings a random vnode to make sure communication is functional
 ping() ->
