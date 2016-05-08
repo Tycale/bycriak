@@ -37,21 +37,42 @@ start_race(N, Tot_bikers) ->
     {ok} .
 
 do_race(N, Tot_bikers, States, My_choices, Round) ->
-    
+    io:format("Round ~p is going on !~n", [Round]),
     display_positions(States),
     Choice = guarded_choice(lists:nth(length(My_choices), My_choices), States, N),
-    ?PRINT(Choice),
-    Decisions = [{speed, 10}, {speed, 9}, {speed, 8}],
-    S1 = update_states(States, Decisions, Tot_bikers),
-    S2 = update_states(S1, Decisions, Tot_bikers),
-    ?PRINT(S1),
-    ?PRINT(S2),
-
-    case have_win(States) of
-        false -> do_race(N, Tot_bikers, States, My_choices ++ [Choice], Round+1);
+    write_choice(N, Choice, Round),
+    Decisions = read_decisions(Tot_bikers, Round),
+    New_State = update_states(States, Decisions, Tot_bikers),
+    
+    case have_win(New_State) of
+        false -> do_race(N, Tot_bikers, New_State, My_choices ++ [Choice], Round+1);
         X -> io:format("We got a winner ! ~p have completed the race !", [X])
     end
     .
+
+write_choice(N, Choice, Round) ->
+    Biker_kv = "biker_decision" ++ integer_to_list(N),
+    kvstore:put(Biker_kv, {Round, Choice}).
+
+read_decisions(Tot_bikers, Round) ->
+    io:format("Waiting after decisions of the other bikers.."),
+        read_decisions(Tot_bikers, Round, []).
+    
+read_decisions(Tot_bikers, Round, Res) ->
+    timer:sleep(200),
+    if 
+        Tot_bikers == 0 -> 
+            Res;
+        true -> 
+            Biker_kv = "biker_decision" ++ integer_to_list(Tot_bikers),
+            Kv = kvstore:get(Biker_kv),
+            case Kv of
+                {ok, {Round, X}} -> read_decisions(Tot_bikers-1, Round, [X | Res]);
+                _ -> read_decisions(Tot_bikers, Round, Res)
+            end
+    end.
+    
+
 
 create_biker_state(N) ->
     #state_biker{id=N, position=0, speed=0, energy=?ENERGY}.
@@ -83,7 +104,7 @@ ask_choice(Last_choice) ->
     io:fwrite("* Change your speed, type : 1 NEW_SPEED~n"),
     io:fwrite("* Go behind a player, type : 2 ID_PLAYER ~n"),
     io:fwrite("* Use boost, type : 3 ~n"),
-    case wait_input(10000) of
+    case wait_input(?ROUND_LENGTH * 1000) of
         timeout -> io:format("~nA time out occured, your last choice will be used ~n", []), Last_choice;
         Cmd -> 
             T = lists:map(fun(X) -> {Int, _} = string:to_integer(X), Int end, string:tokens(Cmd, " ")),
@@ -153,8 +174,8 @@ get_energy(States, Id) ->
     P = get_state(States, Id),
     P#state_biker.energy.
 
-display_positions(States) -> % TODO : Display position in tuple
-    Comp_fct = fun(X, Y) -> X#state_biker.position > Y#state_biker.position end,
+display_positions(States) ->
+    Comp_fct = fun(X, Y) -> X#state_biker.position < Y#state_biker.position end,
     Format_fct = fun(A, AccIn) -> io:format("#~p (position: ~p, speed: ~p, energy: ~p) ~n", 
         [A#state_biker.id, A#state_biker.position, A#state_biker.speed, A#state_biker.energy]), AccIn end,
     io:fwrite(lists:foldr(Format_fct, "", lists:sort(Comp_fct, States))).
