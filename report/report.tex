@@ -140,4 +140,10 @@ A TOB ensures that messages are received reliably and in the same order by all p
 \subsubsection{The "Failing nodes" part}
 It can be important to monitor the nodes in a distributed infrastructure to detect failure of a node. This can be implemented by a simple heartbeat algorithm as suggested. It will just send message "ping" to other nodes and these will respond with a "pong". If we know that a node is down, we can remove the fact that we will have to wait after his decision to continue the race.
 
+\section{Code}
+
+We implemented our project over an established KVstore on Riak Core. To launch our project, launch 3 nodes (for example), join them. And then, on each attached node, you'll have to launch the command "kvstore:start_race(X,N)" where X is the id of the biker (1, 2 or 3 for example) an N is the total number of nodes (3 for example).  
+
+\section{Conclusion}
+
 \end{document}
