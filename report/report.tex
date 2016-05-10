@@ -99,9 +99,11 @@ In this project, we were asked to create a system that simulates a biker race us
 
 \section{Riak Core}
 
-Riak Core is the distributed systems framework that forms the basis of how Riak distributes data and scales. It is based on the principle described in the Amazon Dynamo paper ("Dynamo: Amazon’s Highly Available Key-value Store "). However, Riak core is not specially a KV-Store but gives us a great support to build such applications. \\
+Riak Core is a distributed systems framework for building distributed, scalable, fault-tolerant applications. It is based on principles described in the Amazon Dynamo paper ("Dynamo: Amazon’s Highly Available Key-value Store "). However, Riak core is not specially a KV-Store, as Dynamo, but gives us a great support to build such applications. \\
 
 As in Dynamo, Riak core is using a "ring" which is a partitioning scheme that relies on consistent hashing to distribute the load across multiple nodes. Each node is responsible for regions in the ring. Each command sent to the system is assigned to a node by hashing the command. You can also ask to get a preference list of N nodes which will gives you a list of hashes distributed on multiple nodes that will execute it. That is essential in order to have redondancy if a node crash. As node can join and leave the ring, the riak framework redistribute the partitions between hosts that are alive in the system. Moreover, when a node leave the system, only immediate neighbors of this node on the ring are affected and other nodes remain unaffected. This is important to have a better scalability.\\
+
+\includegraphics[width=\linewidth]{ring.png}
 
 Riak core gives us great facility for the management of such distributed infrastructure. It doesn't let us choose where our command will be executed as this would break the whole principle of the framework. Thus, it doesn't make sense to want to implement communication algorithms on top of it. \\
 
@@ -135,15 +137,17 @@ To solve this problem, we have decided to use a topological ordering to find the
 To have strange behavior as described in the "BEB" part of the assignment, we should have a real time system, in such a way that messages can be sent by nodes at anytime and make a concurrency problem such as node A and node B would be able to not have the same view of the state of the race. But here, as the race is proceed by round, this cannot be possible as they will wait to receive the decision of every biker (node) of the system. The fact that a node can be behind, etc. is not a concurrency problem linked to the "beb" and can be handled as described before with a topological ordering.
 
 \subsubsection{The "Total order broadcast" part}
-A TOB ensures that messages are received reliably and in the same order by all participants. Here, we don't need to be sure that messages will be read in the same order as the application described runs in round. To solve the problem of the BEB described before (real time), nodes can elected a leader wich will decide the order of messages for example.
+A TOB ensures that messages are received reliably and in the same order by all participants. Here, we don't need to be sure that messages will be read in the same order as the application described runs in round. We just have to wait after all the decisions of every node. \\
+
+If the application were in real time, we should have to implement a TOB to solve the problem of the BEB described before (divergent views of the state of the race). For doing this, nodes should elect a leader wich will decide the order of messages.
 
 \subsubsection{The "Failing nodes" part}
-It can be important to monitor the nodes in a distributed infrastructure to detect failure of a node. This can be implemented by a simple heartbeat algorithm as suggested. It will just send message "ping" to other nodes and these will respond with a "pong". If we know that a node is down, we can remove the fact that we will have to wait after his decision to continue the race.
+It can be important to monitor the nodes in a distributed infrastructure to detect failure of a node. In our case, Riak handles it for us. \\
+
+If the application were in real time, we should have to implement such an algorithm in order to know if a node is down. We can dot it with a simple heartbeat algorithm. It will just send message "ping" to other nodes and these will respond with a "pong" As this node could have been the leader, we thus would have to elect a new leader, otherwise the race would not be able to continue.
 
 \section{Code}
 
 We implemented our project over an established KVstore on Riak Core. To launch our project, launch 3 nodes (for example), join them. And then, on each attached node, you'll have to launch the command "kvstore:start\_race(X,N)" where X is the id of the biker (1, 2 or 3 for example) an N is the total number of nodes (3 for example).  
-
-\section{Conclusion}
 
 \end{document}
