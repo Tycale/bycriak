@@ -146,7 +146,7 @@ A biker can decide to follow another biker by going behind him. It thus consumes
 
 To solve this problem, we have decided to use a topological ordering to find the order of execution of the algorithm to be sure that the behin command can be executed without breaking anything. Plus, we can easily detect whenever there is a cycle where bikers should circling (following each others). When this happen, every node can notice it and so we ask users to replay the round as it cannot be executed. \\
 
-\subsection{Notes about the asked point of this project}
+\subsection{Notes about the asked points of this project}
 
 \subsubsection{The "Best effort broadcast" part}
 To produce a strange behavior as described in the "BEB" part of the assignment, we should have a real-time system, in such a way that messages can be sent by nodes at anytime and make a concurrency problem such that node A and node B would be able to have different views of the state of the race.
