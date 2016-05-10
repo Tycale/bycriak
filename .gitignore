@@ -1,1 +1,9 @@
 *.beam
+
+*.aux
+*.log
+*.out
+*.pdf
+*.synctex.gz
+
+.DS_Store

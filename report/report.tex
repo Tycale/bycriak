@@ -1,0 +1,121 @@
+% LSINF2345 - Languages & Algorithms for distributed applications
+% Biker Project
+\documentclass[a4paper, 11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[UKenglish]{babel}
+\usepackage{graphicx}				% Use pdf, png, jpg, or eps§ with pdflatex; use eps in DVI mode
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage[babel=true]{csquotes}
+\usepackage{todonotes}
+\usepackage{graphicx}
+\usepackage{multicol}
+\usepackage{subfig}
+\usepackage{tablefootnote}
+
+
+\usepackage[T1]{fontenc}
+
+\lstset{%
+	basicstyle=\ttfamily\footnotesize,
+	commentstyle=\color{green!90!black},
+	frame=none,
+	keywordstyle=\bfseries\color{blue},
+	language=python,
+	numberstyle=\color{gray},
+%	tabsize=2,
+}
+
+
+\hypersetup{%
+	colorlinks=true,
+	linkcolor=blue,
+	urlcolor=blue
+}
+
+% Styling commands
+\newcommand{\tbf}[1]{\textbf{#1}}
+\newcommand{\tit}[1]{\textit{#1}}
+\newcommand{\ttt}[1]{\texttt{#1}}
+
+% Semantic commands
+\newcommand{\data}[1]{\textit{#1}}
+\newcommand{\state}[1]{\textsf{#1}}
+
+
+
+\def\blurb{\textsc{Université catholique de Louvain\\
+  École polytechnique de Louvain\\
+  Pôle d'ingénierie informatique}}
+\def\clap#1{\hbox to 0pt{\hss #1\hss}}%
+\def\ligne#1{%
+  \hbox to \hsize{%
+    \vbox{\centering #1}}}%
+\def\haut#1#2#3{%
+  \hbox to \hsize{%
+    \rlap{\vtop{\raggedright #1}}%
+    \hss
+    \clap{\vbox{\vfill\centering #2\vfill}}%
+    \hss
+    \llap{\vtop{\raggedleft #3}}}}%
+\begin{document}
+
+\begin{titlepage}
+\thispagestyle{empty}\vbox to 1\vsize{%
+  \vss
+  \vbox to 1\vsize{%
+    \haut{\raisebox{-2mm}{\includegraphics[width=2.5cm]{logo_epl.jpg}}}{\blurb}{\raisebox{-5mm}{\includegraphics[scale=0.20]{ingi_logo.png}}}
+    \vfill
+    \ligne{\Huge \textbf{\textsc{LSINF2345}}}
+     \vspace{5mm}
+    \ligne{\huge \textbf{\textsc{Languages \& Algorithms for distributed applications}}}
+     \vspace{15mm}
+    \ligne{\Large \textbf{\textsc{Biker project}}}
+    \vspace{5mm}
+    \ligne{\large{\textsc{May 11, 2016}}}
+    \vfill
+    \vspace{5mm}
+    \ligne{%
+         \textsc{Professor\\Peter Van Roy}
+      }
+      \vspace{10mm}
+    }%
+    \ligne{%
+         \textsc{Michael Heraly\\Thibault Gerondal}
+      }
+      \vspace{5mm}
+  \vss
+  }
+\end{titlepage}
+
+
+
+\section*{Introduction}
+In this project, we were asked to create a system that simulates a biker race using different solutions for the communication between bikers.
+
+
+\section{Best-effort broadcast}
+
+Each biker is represented by a node in the application.
+Every biker keeps track of the race by storing the state of the other bikers within a list.
+The state of a biker is represented by a record containing the following keys:
+\begin{description}
+	\item[id] identifier of the biker,
+	\item[position] distance travelled by the biker,
+	\item[speed] current speed of the biker,
+	\item[energy] remaining energy of the biker,
+	\item[behind] id of the biker which is ahead of the biker,
+	\item[boost] whether the boost has been used by the biker.
+\end{description}
+
+Each biker node also stores the list of the decisions of every biker of the race.
+At each round, the node applies the decision of every other biker and applies them to the current state of the race to have the new state of the race.
+This allows every biker to know the state of the race at each round.
+
+
+
+\end{document}
