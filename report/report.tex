@@ -99,11 +99,11 @@ In this project, we were asked to create a system that simulates a biker race us
 
 \section{Riak Core}
 
-Riak Core is the distributed systems framework that forms the basis of how Riak distributes data and scales. It is based on the principle described in the Amazon Dynamo paper ("Dynamo: Amazon’s Highly Available Key-value Store "). However, Riak core is not specially a KV-Store but gives us a great support to build such applications.
+Riak Core is the distributed systems framework that forms the basis of how Riak distributes data and scales. It is based on the principle described in the Amazon Dynamo paper ("Dynamo: Amazon’s Highly Available Key-value Store "). However, Riak core is not specially a KV-Store but gives us a great support to build such applications. \\
 
-As in Dynamo, Riak core is using a "ring" which is a partitioning scheme that relies on consistent hashing to distribute the load across multiple nodes. Each node is responsible for the region in the ring between it and its predecessor node on the ring. Each command sent to the system can be easily identified by a key and is thus assigned to a node by hashing the command. You can also ask to get a preference list of N nodes which will gives you a list of hashes contening multiple nodes that will be responsible to handle your command. It is essential to send your command to more than one node in order to have redondancy if a node crash. As node can join and leave the ring, the riak framework redistribute the partitions between hosts that are still alive in the system. Moreover, when a node leave the system, only immediate neighbors of this node on the ring are affected and other nodes remain unaffected. This is important to have a better scalability.\\
+As in Dynamo, Riak core is using a "ring" which is a partitioning scheme that relies on consistent hashing to distribute the load across multiple nodes. Each node is responsible for regions in the ring. Each command sent to the system is assigned to a node by hashing the command. You can also ask to get a preference list of N nodes which will gives you a list of hashes distributed on multiple nodes that will execute it. That is essential in order to have redondancy if a node crash. As node can join and leave the ring, the riak framework redistribute the partitions between hosts that are alive in the system. Moreover, when a node leave the system, only immediate neighbors of this node on the ring are affected and other nodes remain unaffected. This is important to have a better scalability.\\
 
-Riak core gives us great facility for the management of such a distributed infrastructure, this is what this framework is all about. It doesn't let us choose where our command will be executed as this would break the whole principle of this framework. Thus, it doesn't make sense to want to implement communication algorithms on top of it. \\
+Riak core gives us great facility for the management of such distributed infrastructure. It doesn't let us choose where our command will be executed as this would break the whole principle of the framework. Thus, it doesn't make sense to want to implement communication algorithms on top of it. \\
 
 However, we did the project as requested over Riak, even if it doesn't make any sense as any application who want to use riak core must be studied with the idea of the ring in its core. \\
 
@@ -121,23 +121,23 @@ The state of a biker is represented by a record containing the following keys:
 	\item[boost] whether the boost has been used by the biker.
 \end{description}
 
-As suggested by the assistant teacher, the communication on this project will be done over a KVstore implemented over riak which mimics the behavor of Amazon Dynamo. This mean that when we want to "communicate" with another node, we will put a value on this KVstore to make this value available for the others nodes. As specific client doesn't know when the information is available, it will try every 100 ms to retrieve the decisions of other nodes. 
+As suggested by the assistant teacher, the communication on this project will be done over a KVstore implemented over riak which mimics the behavor of Amazon Dynamo. This mean that when we want to "communicate" with another node, we will put a value on this KVstore to make this value available for the others nodes. As specific client doesn't know when the information is available, it will try every 100 ms to retrieve the decisions of other nodes. This make a lot of communication between nodes.. \\
 
 \subsection{The "behind" command problem}
 
-A biker can decide to follow another biker by going behind him. It thus consumes less energy. However, as every biker have to decide by round their actions, it is possible that two bikers want to follow them each other, or that A want to follow B that want to follow C that himself want to follow A. \\
+A biker can decide to follow another biker by going behind him. It thus consumes less energy. However, as every biker have to decide by round their actions, it is possible that two bikers want to follow them each other, or that A want to follow B that want to follow C that himself want to follow A. etc. \\
 
-To solve this problem, we have decided to use a topological ordering to find the order of execution of the algorithm. Plus, we can easily detect whenever there is a cycle with this behind command. When this happen, every node can notice it and so we ask users to replay the round as it cannot be executed. \\
+To solve this problem, we have decided to use a topological ordering to find the order of execution of the algorithm to be sure that the behin command can be executed without breaking anything. Plus, we can easily detect whenever there is a cycle where bikers should circling (following each others). When this happen, every node can notice it and so we ask users to replay the round as it cannot be executed. \\
 
 \subsection{What is wrong with this project ?}
 
 \subsubsection{The "Best effort broadcast" part}
-To have strange behavior as described in the "BEB" part of the assignment, we should have a real time system, in such a way that messages can be sent by nodes at anytime and make concurrency problem such as the fact that A and B doesn't have the same final state of the system. But here, as the rice is proceed by round, this cannot be possible as they will wait to receive the decision of every biker (node) of the system. The fact that a node can be behind, etc. is not a concurrency problem and can be handled as described before with a topological ordering.
+To have strange behavior as described in the "BEB" part of the assignment, we should have a real time system, in such a way that messages can be sent by nodes at anytime and make a concurrency problem such as node A and node B would be able to not have the same view of the state of the race. But here, as the race is proceed by round, this cannot be possible as they will wait to receive the decision of every biker (node) of the system. The fact that a node can be behind, etc. is not a concurrency problem linked to the "beb" and can be handled as described before with a topological ordering.
 
 \subsubsection{The "Total order broadcast" part}
-To solve the problem of the "BEB" described before, the nodes should talk to an elected leader wich will decide the order of the messages and warn others nodes about the order to use for example. There is other way to solve such problem. to be continued.
+A TOB ensures that messages are received reliably and in the same order by all participants. Here, we don't need to be sure that messages will be read in the same order as the application described runs in round. To solve the problem of the BEB described before (real time), nodes can elected a leader wich will decide the order of messages for example.
 
-\subsubsection
-
+\subsubsection{The "Failing nodes" part}
+It can be important to monitor the nodes in a distributed infrastructure to detect failure of a node. This can be implemented by a simple heartbeat algorithm as suggested. It will just send message "ping" to other nodes and these will respond with a "pong". If we know that a node is down, we can remove the fact that we will have to wait after his decision to continue the race.
 
 \end{document}
