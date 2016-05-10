@@ -166,8 +166,7 @@ It can be important to monitor the nodes in a distributed infrastructure to dete
 In this project, Riak handles it for us. \\
 
 If the application was in real-time, we should have to implement such an algorithm in order to know if a node is down as this node could have been the leader.
-We can do it with a simple heartbeat algorithm that will just send a "ping" message to other nodes and these will respond with a "pong".
-If the leader goes down, thus we would have to elect a new leader, otherwise the race would not be able to continue.
+We can do it with a simple heartbeat algorithm. Each node will send "ping" message to other nodes and these will respond with a "pong" in order to be sure that they are still alive. If the leader goes down, thus we would have to elect a new leader, otherwise the race would not be able to continue.
 
 \section{Code}
 
